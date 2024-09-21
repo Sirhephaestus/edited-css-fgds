@@ -1,0 +1,328 @@
+@include "base_css.fgd" //For ease and cleanliness.
+@include "cstrike_css.fgd"
+
+@PointClass base(EnvGlobal) size(-8 -8 -8, 8 8 8) = env_global : 
+	"An entity to control a game-specific global states."
+[
+	globalstate(choices) : "Global State to Set" =
+	[
+		"gordon_precriminal" : "Gordon pre-criminal" 
+		"antlion_allied" : "Antlions are player allies" 
+//		"player_stealth" : "Player in APC is disguised as combine" 
+		"suit_no_sprint" : "Suit sprint function not yet enabled" 
+		"super_phys_gun" : "Super phys gun is enabled" 
+		"friendly_encounter" : "Friendly encounter sequence (lower weapons, etc.)"
+//		"citizens_passive" : "Citizens are *not* player allies (cannot be commanded)"
+		"gordon_invulnerable" : "Gordon is invulnerable"
+		"no_seagulls_on_jeep" : "Don't spawn seagulls on the jeep"
+		"ep2_alyx_injured" : "Episode 2: Alyx injured"
+		"ep_alyx_darknessmode" : "Episodic: Alyx darkness mode"
+		"hunters_to_run_over" : "Ep2 Counter: Hunters to run over before they dodge"
+	]
+]
+
+
+@PointClass base(Targetname) iconsprite("editor/obsolete.vmt") = player_weaponstrip : "Strips player's weapons"
+[
+	// Inputs
+	input Strip(void) : "Strip player's weapons"
+	input StripWeaponsAndSuit(void) : "Strip player's weapons and his suit"
+]
+
+@PointClass base(Targetname) iconsprite("editor/obsolete.vmt") = player_speedmod: "Speeds up or slows down player velocity over time (slow mo/fast forward)"
+[
+	spawnflags(Flags) =
+	[
+		1: "Suppress weapons" : 0
+		2: "Suppress HUD" : 0
+		4: "Suppress jump" : 0
+		8: "Suppress duck" : 0
+		16: "Suppress use" : 0
+		32: "Suppress sprint" : 0
+		64: "Suppress attack" : 0
+		128: "Suppress zoom" : 0
+	]
+
+	// Inputs
+	input ModifySpeed(float) : "Modifies player speed by X amount."
+]
+
+@PointClass base(Parentname, Angles) studioprop("models/editor/camera.mdl") = point_camera : "Camera"
+[
+	spawnflags(Flags) =
+	[
+		1 : "Start Off" : 0 
+	]
+
+	targetname(target_source) : "Name" : : "The name that other entities refer to this entity by."
+	FOV(float) : "FOV" : 90 : "Field of view in degrees"
+//	resolution(float) : "resolution" : 256 : "width/height of the render target for the camera"
+	UseScreenAspectRatio(integer) : "Screen Aspect Ratio (0 or 1)" : 0
+	fogEnable(integer) : "Fog Enable (0 or 1)" : 0
+	fogColor(color255) : "Fog Color" : "0 0 0"
+	fogStart(float) : "Fog Start" : 2048 : "The near fog plane."
+	fogEnd(float) : "Fog End" : 4096 : "The far fog/clipping plane."
+	fogMaxDensity(float) : "Fog Max Density [0..1]" : 1 : "The maximum fog density. 0=no fog, 1=full fog."
+
+	// Inputs
+	input ChangeFOV(string) : "Changes camera's FOV over time"
+	input SetOnAndTurnOthersOff(void) : "Turn the camera on, and turn all other cameras off."
+	input SetOn(void) : "Turn the camera on."
+	input SetOff(void) : "Turn the camera off."
+]
+
+@SolidClass base(func_brush) = func_monitor :
+	"A monitor that renders the view from a given point_camera entity."
+[
+	target(target_destination) : "Camera name"
+	
+	// Inputs
+	input Toggle(void) : "Toggle - If on, turn off, if off, turn on."
+	input Enable(void) : "Enable."
+	input Disable(void) : "Disable."
+	input SetCamera(string) : "Sets the camera to use for this monitor. Takes the name of a point_camera entity in the map."
+]
+
+@PointClass base(Targetname) iconsprite("editor/obsolete.vmt") = env_entity_dissolver: "Entity Dissolver"
+[
+	input Dissolve(string) : "Dissolve target, if no target is passed it'll use the target specified in the target field."
+	target(target_destination) : "Target to Dissolve" : "" : "Targetname of the entity you want to dissolve."
+
+	magnitude(integer) : "Magnitude" : 250 : "How strongly to push away from the center."
+
+
+	dissolvetype(choices) : "Dissolve Type" : "Energy" =
+	[
+		0 : "Energy"
+		1 : "Heavy electrical"
+		2 : "Light electrical"
+		3 : "Core Effect"
+	]
+]
+
+@SolidClass base(Targetname) = func_weight_button : "A button which activates after a specified amount of weight is applied"
+[
+	WeightToActivate(float) 	: "Amount of weight required before this button activates."
+
+	//Outputs
+	output OnPressed(void)		: "Fired when the button is touching enough weight."
+	output OnReleased(void)		: "Fired when the button was pressed, but weight was removed."
+]
+
+@PointClass base(Targetname, Parentname, Targetname, EnableDisable) iconsprite("editor/bullseye.vmt") = env_gunfire : "Gunfire Effect"
+[
+	target(target_destination) : "Target" : "" : "Shoot at this target. REMEMBER - this is an effect only! It does not do damage!"
+
+	minburstsize(integer) : "Min Burst Size" : 2 : "Minimum number of rounds in a burst."
+	maxburstsize(integer) : "Max Burst Size" : 7 : "Maximum number of rounds in a burst."
+
+	minburstdelay(float) : "Min Delay Between Bursts" : 2 : "Minimum delay between bursts. (seconds)"
+	maxburstdelay(float) : "Max Delay Between Bursts" : 5 : "Maximum delay between bursts. (seconds)"
+
+	rateoffire(float) : "Rate of fire" : 10 : "Expressed as rounds per second"
+
+	spread(choices) : "Bullet spread" : 5 : "The 'cone of inaccuracy' of the shots fired by this entity." =
+	[
+		1 : "1 Degree"
+		5 : "5 Degrees"
+		10 : "10 Degrees"
+		15 : "15 Degrees"
+	]
+
+	bias(choices) : "Bullet distribution should be..." : 1 : "How to distribute bullets within the spread. Even distribution is a true scatter throughout the spread. Biased towards the outside makes the shots 'miss' the target by tending towards the outside of the spread." =
+	[
+		1 : "Evenly distributed"
+		-1 : "Biased towards the outside"
+	]
+
+	collisions(choices) : "Collision detection" : 0 : "Whether/how to handle bullet collision detection. NOTE: If you select NONE, this entity will be very cheap to use, but all bullets will stop short at their target's position in space and there will be no impact effects. Normal collision detection does the same things NPCs do when they fire their guns (except harm anything)." =
+	[
+		0 : "None. Cheap for performance."
+		1 : "Normal collision detection."
+	]
+
+	shootsound(choices) : "Shoot Sound" : "Weapon_AK47.Single" : "Gunfire sound to make" = 
+	[
+		"Weapon_AK47.Single" : "AK-47"
+		"Weapon_AUG.Single" : "AUG"
+		"Weapon_AWP.Single" : "AWP"
+		"Weapon_bizon.Single" : "Bizon"
+		"Weapon_CZ75A.Single" : "CZ75-Auto"
+		"Weapon_DEagle.Single" : "Deagle"
+		"Weapon_ELITE.Single" : "Elite"
+		"Weapon_FAMAS.Single" : "Famas"
+		"Weapon_FiveSeven.Single" : "Five-SeveN"
+		"Weapon_G3SG1.Single" : "G3SG1"
+		"Weapon_GalilAR.Single" : "Galil"
+		"Weapon_Glock.Single" : "Glock"
+		"Weapon_hkp2000.Single" : "HK-P2000"
+		"Weapon_M249.Single" : "M249"
+		"Weapon_M4A1.Silenced" : "M4A1-S"
+		"Weapon_M4A1.Single" : "M4A1"
+		"Weapon_M4A1.SilencedSingle" : "M4A4"
+		"Weapon_MAC10.Single" : "MAC-10"
+		"Weapon_Mag7.Single" : "MAG-7"
+		"Weapon_MP7.Single" : "MP7"
+		"Weapon_MP9.Single" : "MP9"
+		"Weapon_Negev.Single" : "Negev"
+		"Weapon_Nova.Single" : "Nova"
+		"Weapon_P250.Single" : "P250"
+		"Weapon_P90.Single" : "P90"
+		"Weapon_Sawedoff.Single" : "Sawed-off"
+		"Weapon_SCAR20.Single" : "SCAR-20"
+		"Weapon_sg556.Single" : "SG-556"
+		"Weapon_SSG08.Single" : "SSG-08"
+		"Weapon_tec9.Single" : "TEC-9"
+		"Weapon_UMP45.Single" : "UMP-45"
+		"Weapon_USP.SilencedShot" : "USP-S"
+		"Weapon_USP.Single" : "USP"
+		"Weapon_XM1014.Single" : "XM1014"
+		"Default.Null" : "None"
+	]
+
+	tracertype(choices) : "Tracer" : "Tracer" : "Type of tracer to display" = 
+	[
+		"Tracer" : "Default"
+	]
+]
+
+@PointClass base(Targetname, Parentname, EnableDisable) iconsprite("editor/env_particles.vmt") = env_sporeexplosion : "Bugbait Spore Effect"
+[
+	spawnrate(float) : "Spawn Rate (as percentage)" : "25" : "How dense the spore effect is"
+]
+
+@PointClass base(Targetname, Angles) line(255 255 255, targetname, target) color(247 181 82) studio("models/editor/cone_helper.mdl") = path_corner : "Generic path point"
+[
+	spawnflags(Flags) =
+	[
+		1: "Wait for retrigger" : 0
+		2: "Teleport to THIS path_corner" : 0
+	]
+	target(target_destination) : "Next stop target"
+	wait(integer) : "Wait here (secs)" : 0
+	speed(integer) : "New Train Speed" : 0
+	yaw_speed(integer) : "New Train rot. Speed" : 0
+
+	// Inputs 
+	input SetNextPathCorner(string) : "Sets next pathcorner"
+
+	// Outputs
+	output OnPass(void) : "Fires when a path follower passes this point"
+]
+
+@SolidClass base(Targetname, Origin, RenderFields) = func_train
+[
+	spawnflags(flags) =
+	[
+		8 : "Non-solid" : 0
+	]
+	texframeindex(integer) : "Initial Brush Frame Index" : : "Use this to set the initial frame of materials with multiple frames in the brush"
+	target(target_destination) : "First path_corner"
+	noise1(sound) : "Movement Sound" : : "The sound to play when the train moves."
+	noise2(sound) : "Stop Sound" : : "The sound to play when the train stops moving."
+	speed(float) : "Speed" : "50.000000" : "Speed at which the brush moves."
+	volume(float) : "Sound volume [0.0, 10.0]" : "0.000000"
+	dmg(float) : "Crush Damage" : "0.000000"
+	input Toggle(void) : "Toggle movement"
+	input Start(void) : "Start movement"
+	input Stop(void) : "Stop movement"
+	input Use(void) : "Toggle movement - has a different functionality than Toggle"
+]
+
+
+@SolidClass base(Trigger) = trigger_vphysics_motion :
+	"A volumetric trigger that affects the motion of vphysics objects that touch it."
+[
+	spawnflags(Flags) =
+	[
+		4096 : "Can move (through hierarchical attachment)" : 0
+	]
+
+	StartDisabled(choices) : "Start Disabled" : 0 =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+	filtername(filterclass) : "Filter Name" : : "Filter to use to see if activator triggers me. See filter_activator_name for more explanation."
+	
+	SetGravityScale(float) : "Scale gravity of objects in the field." : "1.0"
+	input SetGravityScale(float) : "Scale gravity of objects in the field."
+
+	SetAdditionalAirDensity(float) : "Additional air density for drag" : "0"
+	input SetAdditionalAirDensity(float) : "Additional air density for drag"
+
+	SetVelocityLimit(float) : "Max velocity in field (0 disables)" : "0.0"
+	input SetVelocityLimit(float) : "Max velocity in field."
+
+	SetVelocityLimitDelta(float) : "Max amount to reduce velocity per second when it exceeds the velocity limit (0 disables)" : "0.0"
+	input SetVelocityLimitDelta(float) : "Max amount to reduce velocity per second"
+
+	input SetVelocityLimitTime(string) : "Accepts two arguments: the first is the new velocity limit, the second is the time it takes to ramp to that value"
+
+	SetVelocityScale(float) : "Velocity scale/drag" : "1.0"
+	input SetVelocityScale(float) : "Velocity scale/drag"
+
+	SetAngVelocityLimit(float) : "Max angular velocity in field (degrees/s, 0 disables)" : "0.0"
+	input SetAngVelocityLimit(float) : "Max angular velocity in field."
+
+	SetAngVelocityScale(float) : "Angular Velocity scale/drag" : "1.0"
+	input SetAngVelocityScale(float) : "Angular Velocity scale/drag"
+
+	SetLinearForce(float) : "Linear force (0 disables)" : "0.0"
+	input SetLinearForce(float) : "Linear force (0 disables)"
+
+	SetLinearForceAngles(angle) : "Direction of linear force (Pitch Yaw Roll (Y Z X))" : "0 0 0"
+//	input SetLinearForceAngles(angle) : "Direction of linear force (Pitch Yaw Roll (Y Z X))"
+
+	ParticleTrailMaterial(string) : "Particle Trail Material" : : "Name of a material to use for the particle trail, no name means no particle trail"
+	ParticleTrailLifetime(float) : "Particle Trail Lifetime" : 4 : "Lifetime of the particles to emit"
+	ParticleTrailStartSize(float) : "Particle Trail Starting Sprite Size" : 2 : "Starting size of the sprite to emit"
+	ParticleTrailEndSize(float) : "Particle Trail Ending Sprite Size" : 3 : "Ending size of the sprite to emit"
+
+	// Inputs
+	input	Enable(void) : "Enable the trigger."
+	input	Disable(void): "Disable the trigger."
+	input	Toggle(void) : "Toggle enable/disable."
+]
+
+@SolidClass base(Targetname, Parentname, Global, EnableDisable) = trigger_brush
+[
+	spawnflags(flags) =
+	[
+		2: "Ignore player +USE" : 0
+	]
+	InputFilter(choices) : "Input Filter" : 0 : "Used to specify which inputs this entity will accept." =
+	[
+		0 : "Allow Everything"
+		22 : "Touch/Untouch: Players"
+		20 : "Touch/Untouch: Players & NPCs"
+		16 : "Touch/Untouch: Players, NPCs, Pushables"
+		18 : "Touch/Untouch: Players & Pushables"
+		21 : "Touch/Untouch: NPCs"
+		17 : "Touch/Untouch: NPCs & Pushables"
+		19 : "Touch/Untouch: Pushables"
+		6 : "Touch/Untouch & Use: Players"
+		2 : "Touch/Untouch & Use: Players & Pushables"
+		4 : "Touch/Untouch & Use: Players & NPCs: "
+		5 : "Touch/Untouch & Use: NPCs"
+		1 : "Touch/Untouch & Use: NPCs & Pushables"
+		3 : "Touch/Untouch & Use: Pushables"
+		14 : "Use: Players"
+		12 : "Use: Players & NPCs"
+		8 : "Use: Players, NPCs, & Pushables"
+		10 : "Use: Players & Pushables"
+		13 : "Use: NPCs"
+		9 : "Use: NPCs & Pushables"
+		11 : "Use: Pushables"
+	]
+	input Use(void) : "Fires the OnUse output."
+	output OnUse(void) : "Fired when the Use input is given."
+]
+
+@PointClass base(Targetname, Parentname, Angles) = env_muzzleflash : "Muzzle Flash" 
+[
+	parentattachment(string) : "Parent Attachment" : "" : "The name of an attachment on the parent to hierarchically attach to."
+	scale(float) : "Scale" : "1" : "Size of the muzzle flash."
+	
+	input Fire(void) : "Fires the effect once."
+]
